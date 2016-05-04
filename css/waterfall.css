@@ -1,0 +1,57 @@
+@charset "UTF-8";
+
+/* base */
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+/* waterfall */
+
+.water-fall-wrap {
+    width: 80%;
+    margin: 1em auto;
+    border: 1px solid #ccc;
+}
+.water-fall {
+    box-sizing: content-box;
+    zoom: 1;
+    display: block;
+    visibility: hidden;
+    position: relative;
+    z-index: 0;
+    margin: 0 auto;
+    padding-bottom: 3em;
+    font-size: 18px;
+}
+.water-fall div.grid {
+    visibility: hidden;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 200px;
+    padding: 0;
+    background: #fff;
+    box-shadow: 0 1px 0 1px #e8e8e8;
+    opacity: 1;
+    -webkit-transition: opacity .4s ease-in-out;
+    transition: opacity .4s ease-in-out
+}
+.active div.grid {
+    -webkit-transition: all .5s ease-in-out;
+    transition: all .5s ease-in-out;
+}
+.grid .pic {
+    overflow: hidden;
+    margin-bottom: 0;
+    font: 0/0 "Arial";
+    text-align: center
+}
+.grid .pic a {
+    display: block;
+}
+.grid .pic a img {
+    width: 100%;
+    max-width: none;
+}
