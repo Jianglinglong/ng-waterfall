@@ -6,6 +6,9 @@
     margin: 0;
     padding: 0;
 }
+body {
+    overflow-y: scroll;
+}
 
 /* waterfall */
 
@@ -54,4 +57,26 @@
 .grid .pic a img {
     width: 100%;
     max-width: none;
+}
+
+.tips-box {
+    position: absolute;
+    bottom: 14px;
+    left: 24%;
+    width: 52%;
+    font: 16px/3 "Arial";
+    text-align: center;
+}
+.tips-load {
+    border-radius: .5em;
+    background-color: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    cursor: pointer;
+}
+.tips-load:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+.tips-loading {
+    bottom: 0;
+    height: 48px;
 }
