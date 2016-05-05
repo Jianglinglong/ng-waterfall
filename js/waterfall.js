@@ -76,7 +76,10 @@
                         }
                     }
                     scope.boxNow = currentLen;
-                    console.log('current boxs =', scope.boxNow);
+                    // console.log('current boxs =', scope.boxNow);
+                    if (scope.boxNow < scope.config.jsonData.length) {
+                        scope.loading('Load more', 'load');
+                    }
                 };
                 //生成格子
                 scope.addBox = function(item, length, i, boxList) {
