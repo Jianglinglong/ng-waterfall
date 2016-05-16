@@ -6,15 +6,15 @@
             restrict: 'EA',
             scope: {
                 autoLoad: '@',
+                boxColumn: '@',
                 boxClass: '@',
                 boxSpace: '@',
-                fixedRatio: '@',
                 boxWidth: '@',
-                boxColumn: '@',
+                fixedRatio: '@',
                 loadStep: '@',
                 initStep: '@',
-                tagName: '=?',
                 customTips: '@',
+                tagName: '=?',
                 showTips: '=?',
                 toggleShow: '@',
                 detectPartial: '@',
@@ -34,20 +34,20 @@
                         space: scope.boxSpace ? scope.boxSpace - 0 : 10, //格子间距。数值，可选，默认值：10
                         ratio: scope.fixedRatio ? scope.fixedRatio - 0 : 0, //格子长宽比。数值，可选，默认值：0（自适应原始比例）
                         step: scope.loadStep ? scope.loadStep - 0 : 30, //每次动态加载的格子数。数值，可选，默认值：30
-                        initLen: scope.initStep ? scope.initStep - 0 : (scope.loadStep ? scope.loadStep - 0 : 30), //初始化加载的格子数。数值，可选，默认值：同上（loadStep）
+                        init: scope.initStep ? scope.initStep - 0 : (scope.loadStep ? scope.loadStep - 0 : 30), //初始化加载的格子数。数值，可选，默认值：同上（loadStep）
                         customTip: scope.customTips ? scope.customTips - 0 : 0, //是否使用自定义的提示内容。1/0，可选，默认值：0
                         showTips: scope.showTips, //自定义提示内容判断参数。对象（提供后，在自定义提示代码上用ng-if做判断）
-                        jsonData: scope.jsonData || [], //原始数据。对象（json格式）
-                        jsonUrl: scope.jsonUrl || '', //动态数据加载地址。字符串（url地址）。以上两项最少提供一个
                         toggle: scope.toggleShow ? scope.toggleShow - 0 : 0, //是否支持可视范围内动态切换图片。1/0，可选，默认值：0
-                        detect: scope.detectPartial ? scope.detectPartial - 0 : 0 //可视判断方式。1：部分进入为可视，0：整体进入为可视。上项（toggleShow）为ture时有效，可选，默认值：0
-                    }
+                        detect: scope.detectPartial ? scope.detectPartial - 0 : 0, //可视判断方式。1：部分进入为可视，0：整体进入为可视。上项（toggleShow）为ture时有效，可选，默认值：0
+                        jsonData: scope.jsonData || [], //原始数据。对象（json格式）
+                        jsonUrl: scope.jsonUrl || '' //动态数据加载地址。字符串（url地址）。以上两项最少提供一个
+                    };
 
                     scope.baseWrap = element;
                     scope.baseBoxList = []; //已排列的格子列表
                     scope.boxNow = 0; //记录当前总共有多少个格子
                     scope.heightList = []; //记录每列的高度
-                    scope.cursor = ''; // 当前翻页指针，通过服务器透传获取，初始为空
+                    scope.cursor = ''; //当前翻页指针，通过服务器透传获取，初始为空
                     scope.doLoad();
                     scope.doResize();
                     scope.doScroll();
@@ -66,8 +66,70 @@
                         }
                     }
                 };
-                //加载更多格子
-                scope.getMore = function(obj, json, init) {
+                // 请求远程数据
+                scope.requestData = function(initLen) {
+                    if (!scope.config.load) {
+                        scope.loading();
+                    }
+                    scope.loading('loading', 'loading');
+
+                    $http.get(scope.config.jsonUrl, {
+                        tag: scope.tagName || '',
+                        count: initLen || scope.config.step,
+                        cursor: scope.cursor
+                    }).then(function(response) {
+                        scope.loading();
+                        var result = response.data;
+                        if (result && result.total > 0) {
+                            scope.cursor = result.next_cursor || '';
+                            var arr = [];
+                            angular.forEach(result.result, function(item) {
+                                arr.push({
+                                    mediaId: item.index,
+                                    name: item.index,
+                                    width: item.width,
+                                    height: item.height,
+                                    image: item.image,
+                                    media: item.media
+                                });
+                            });
+                            scope.jsonData = scope.jsonData.concat(arr);
+                            scope.addMoreBox(scope.baseWrap, scope.jsonData, initLen);
+                            scope.scrollTime = true;
+                            if (scope.cursor && !scope.config.load) {
+                                scope.loading('Load more', 'load');
+                            }
+                        } else {
+                            if (scope.config.customTip) {
+                                scope.showTips = true;
+                            }
+                            scope.baseWrap.css({
+                                'visibility': 'visible',
+                                'width': 'auto'
+                            });
+                            if (scope.jsonData.length === 0) {
+                                if (!scope.config.customTip) {
+                                    scope.loading('Sorry,no result found.', 'noresult');
+                                }
+                            } else {
+                                scope.loading();
+                            }
+                        }
+                    }, function() {
+                        scope.loading();
+                        if (scope.config.customTip) {
+                            scope.showTips = true;
+                        } else {
+                            scope.loading('Sorry,no result found.', 'noresult');
+                        }
+                        scope.baseWrap.css({
+                            'width': 'auto',
+                            'visibility': 'visible'
+                        });
+                    });
+                };
+                // 生成批量格子
+                scope.addMoreBox = function(obj, json, init) {
                     obj.removeClass('active');
                     var currentLen = Math.min(json.length, scope.boxNow + (init || scope.config.step));
                     for (var i = scope.boxNow; i < currentLen; i++) {
@@ -77,11 +139,11 @@
                     }
                     scope.boxNow = currentLen;
                     // console.log('current boxs =', scope.boxNow);
-                    if (scope.boxNow < scope.config.jsonData.length) {
+                    if (scope.boxNow < scope.jsonData.length) {
                         scope.loading('Load more', 'load');
                     }
                 };
-                //生成格子
+                // 生成单个格子
                 scope.addBox = function(item, length, i, boxList) {
                     if (!$('#box_' + i).length) {
                         var div;
@@ -116,14 +178,14 @@
                         scope.postPosition(scope.baseWrap, boxList, 'add');
                     }
                 };
-                //现有格子重排函数
+                // 现有格子重排函数
                 scope.sortAll = function(elem, childTagName) {
                     scope.heightList = []; //每次重排都要重置列高度记录数组
                     scope.boxNow = 0;
                     var oldBox = elem.find(childTagName).filter(':visible');
-                    scope.postPosition(elem, oldBox, 'resort'); //执行定位函数
+                    scope.postPosition(elem, oldBox, 'resort');
                 };
-                //定位函数
+                // 定位函数
                 scope.postPosition = function(parent, boxList, action) {
                     var first = $(boxList[scope.boxNow]);
                     scope.firstWidth = scope.firstWidth || first.outerWidth() + scope.config.space;
@@ -152,7 +214,7 @@
                         var box = $(boxList[i]);
                         var image = box.find('img');
                         if (image.length) {
-                            //图片按原始比例调整为适应格子宽度的新尺寸
+                            // 图片按原始比例调整为适应格子宽度的新尺寸
                             if (scope.config.ratio) {
                                 var pic = box.find('p.pic');
                                 if (image.attr('ratio') > scope.config.ratio) {
@@ -198,6 +260,7 @@
                         scope.boxNow = boxList.length;
                     }
                 };
+                // 加载动画和按钮
                 scope.loading = function(text, addon) {
                     if (text) {
                         var elem;
@@ -215,81 +278,22 @@
                         $('.tips-box').remove();
                     }
                 };
+                // 加载更多
                 scope.loadIt = function() {
-                    if (scope.boxNow < scope.config.jsonData.length) {
-                        scope.getMore(scope.baseWrap, scope.config.jsonData);
+                    if (scope.boxNow < scope.jsonData.length) {
+                        scope.addMoreBox(scope.baseWrap, scope.jsonData);
                     } else if (scope.scrollTime) {
                         scope.scrollTime = false;
                         scope.requestData();
                     }
                 };
-                scope.requestData = function(initLen) {
-                    if (!scope.config.load) {
-                        scope.loading();
-                    }
-                    scope.loading('loading', 'loading');
-
-                    $http.get(scope.config.jsonUrl, {
-                        tag: scope.tagName || '',
-                        count: initLen || scope.config.step,
-                        cursor: scope.cursor
-                    }).then(function(response) {
-                        scope.loading();
-                        var result = response.data;
-                        if (result && result.total > 0) {
-                            scope.cursor = result.next_cursor || '';
-                            var arr = [];
-                            angular.forEach(result.result, function(item) {
-                                arr.push({
-                                    mediaId: item.index,
-                                    name: item.index,
-                                    width: item.width,
-                                    height: item.height,
-                                    image: item.image,
-                                    media: item.media
-                                });
-                            });
-                            scope.config.jsonData = scope.config.jsonData.concat(arr);
-                            scope.getMore(scope.baseWrap, scope.config.jsonData, initLen);
-                            scope.scrollTime = true;
-                            if (scope.cursor && !scope.config.load) {
-                                scope.loading('Load more', 'load');
-                            }
-                        } else {
-                            if (scope.config.customTip) {
-                                scope.showTips = true;
-                            }
-                            scope.baseWrap.css({
-                                'visibility': 'visible',
-                                'width': 'auto'
-                            });
-                            if (scope.config.jsonData.length === 0) {
-                                if (!scope.config.customTip) {
-                                    scope.loading('Sorry,no result found.', 'noresult');
-                                }
-                            } else {
-                                scope.loading();
-                            }
-                        }
-                    }, function() {
-                        scope.loading();
-                        if (scope.config.customTip) {
-                            scope.showTips = true;
-                        } else {
-                            scope.loading('Sorry,no result found.', 'noresult');
-                        }
-                        scope.baseWrap.css({
-                            'width': 'auto',
-                            'visibility': 'visible'
-                        });
-                    });
-                };
+                // 初始化加载
                 scope.doLoad = function() {
-                    if (!scope.config.jsonData.length) {
+                    if (!scope.jsonData.length) {
                         scroll(0, 0);
-                        scope.requestData(scope.config.initLen);
+                        scope.requestData(scope.config.init);
                     } else {
-                        scope.getMore(scope.baseWrap, scope.config.jsonData);
+                        scope.addMoreBox(scope.baseWrap, scope.jsonData);
                     }
                 };
                 scope.doScroll = function() {
