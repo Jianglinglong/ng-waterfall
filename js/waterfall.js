@@ -36,10 +36,8 @@
                         step: scope.loadStep ? scope.loadStep - 0 : 30, //每次动态加载的格子数。数值，可选，默认值：30
                         init: scope.initStep ? scope.initStep - 0 : (scope.loadStep ? scope.loadStep - 0 : 30), //初始化加载的格子数。数值，可选，默认值：同上（loadStep）
                         customTip: scope.customTips ? scope.customTips - 0 : 0, //是否使用自定义的提示内容。1/0，可选，默认值：0
-                        showTips: scope.showTips, //自定义提示内容判断参数。对象（提供后，在自定义提示代码上用ng-if做判断）
                         toggle: scope.toggleShow ? scope.toggleShow - 0 : 0, //是否支持可视范围内动态切换图片。1/0，可选，默认值：0
                         detect: scope.detectPartial ? scope.detectPartial - 0 : 0, //可视判断方式。1：部分进入为可视，0：整体进入为可视。上项（toggleShow）为ture时有效，可选，默认值：0
-                        jsonData: scope.jsonData || [], //原始数据。对象（json格式）
                         jsonUrl: scope.jsonUrl || '' //动态数据加载地址。字符串（url地址）。以上两项最少提供一个
                     };
 
@@ -48,6 +46,8 @@
                     scope.boxNow = 0; //记录当前总共有多少个格子
                     scope.heightList = []; //记录每列的高度
                     scope.cursor = ''; //当前翻页指针，通过服务器透传获取，初始为空
+                    scope.showTips = false; //自定义提示内容判断参数。对象（提供后，在自定义提示代码上用ng-if做判断）
+                    scope.jsonData = scope.jsonData || []; //原始数据。对象（json格式）
                     scope.doLoad();
                     scope.doResize();
                     scope.doScroll();
